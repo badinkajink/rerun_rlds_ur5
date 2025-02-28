@@ -2,13 +2,19 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"rerun_rlds_ur5" = ["ur_description/**/*.urdf", "ur_description/meshes/**/*.stl", "ur_description/meshes/**/*.dae"]
+
 [project]
-name = "rerun_ur5_rlds"
+name = "rerun_rlds_ur5"
 version = "0.0.1"
 authors = [
   { name="William Xie", email="wixi6454@colorado.edu" },
 ]
-description = "magpie_perception"
+description = "rerun_rlds_ur5"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -31,5 +37,5 @@ dependencies = [
 #'tensorflow', 'tensorflow_datasets',
 
 [project.urls]
-Homepage = "https://github.com/correlllab/magpie_perception"
-Issues = "https://github.com/correlllab/magpie_perception/issues"
+Homepage = "https://github.com/badinkajink/rerun_rlds_ur5"
+Issues = "https://github.com/badinkajink/rerun_rlds_ur5/issues"
