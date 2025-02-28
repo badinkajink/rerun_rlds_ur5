@@ -411,7 +411,7 @@ def main():
 
     urdf_logger = URDFLogger(args.urdf)
 
-    from raw import RawScene, blueprint_raw
+    from rerun_rlds_ur5.raw import RawScene, blueprint_raw
 
     raw_scene = RawScene(args.scene)
     rr.send_blueprint(blueprint_raw())

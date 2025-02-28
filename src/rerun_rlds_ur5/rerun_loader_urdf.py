@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import importlib.resources as pkg_resources
 import pathlib
+from pathlib import Path
 from typing import Optional
 
 from PIL import Image
@@ -15,6 +17,67 @@ import rerun as rr  # pip install rerun-sdk
 import scipy.spatial.transform as st
 import trimesh
 from urdf_parser_py import urdf as urdf_parser
+
+def get_urdf_paths(robot="ur5"):
+    """Finds the full path to the URDF file inside the installed package.
+        Then updates the URDF file with absolute paths to the mesh files in a new file.
+        And returns the new updated URDF file path, STL directory, and DAE directory.
+    """
+    package_name = "rerun_rlds_ur5.ur_description"
+
+    try:
+        # Get URDF file path
+        with pkg_resources.path(package_name, f"{robot}.urdf") as urdf_path:
+            robot_path = str(urdf_path)
+
+        # Get STL and DAE directories
+        base_path = Path(urdf_path).parent / "meshes" / robot
+        stl_path = str(base_path / "collision")
+        dae_path = str(base_path / "visual")
+
+        # update URDF file with absolute paths
+        with open(robot_path, "r") as file:
+            urdf_content = file.read()
+
+        # Replace occurrences of relative paths with environment variables
+        urdf_content = urdf_content.replace(
+            f'filename="ur_description/meshes/{robot}/visual/', 
+            f'filename="{dae_path}/'
+        )
+        urdf_content = urdf_content.replace(
+            f'filename="ur_description/meshes/{robot}/collision/', 
+            f'filename="{stl_path}/'
+        )
+
+        updated_urdf_path = robot_path.replace(".urdf", "_updated.urdf")
+        with open(updated_urdf_path, "w") as file:
+            file.write(urdf_content)
+
+        return updated_urdf_path, stl_path, dae_path
+
+    except FileNotFoundError:
+        raise ValueError(f"URDF file '{robot}.urdf' not found in package.")
+
+def update_urdf(robot, urdf_path, stl_path, dae_path):
+    """Replaces relative mesh paths in the URDF file with absolute paths from environment variables."""
+    with open(urdf_path, "r") as file:
+        urdf_content = file.read()
+
+    # Replace occurrences of relative paths with environment variables
+    urdf_content = urdf_content.replace(
+        f'filename="ur_description/meshes/{robot}/visual/', 
+        f'filename="{dae_path}/'
+    )
+    urdf_content = urdf_content.replace(
+        f'filename="ur_description/meshes/{robot}/collision/', 
+        f'filename="{stl_path}/'
+    )
+
+    updated_urdf_path = urdf_path.replace(".urdf", "_updated.urdf")
+    with open(updated_urdf_path, "w") as file:
+        file.write(urdf_content)
+
+    return updated_urdf_path
 
 class URDFLogger:
     """Class to log a URDF to Rerun."""

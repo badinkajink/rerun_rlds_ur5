@@ -2,9 +2,9 @@
 import os
 from pathlib import Path
 import numpy as np
-from rerun_loader_urdf import URDFLogger
+from rerun_rlds_ur5.rerun_loader_urdf import URDFLogger
 from scipy.spatial.transform import Rotation
-from common import log_angle_rot, blueprint_row_images, link_to_world_transform
+from rerun_rlds_ur5.common import log_angle_rot, blueprint_row_images, link_to_world_transform
 import rerun as rr
 import argparse
 import pandas as pd
@@ -85,7 +85,7 @@ class RLDSDataset:
         )
         rr.log(
             "/action_dict/contact_force",
-            rr.Scalar(step["action_dict"]["contact_force"]),
+            rr.Scalar(step["observation"]["contact_force"]),
         )
         rr.log("/reward", rr.Scalar(step["reward"]))
 
@@ -188,7 +188,6 @@ class DeliGraspTrajectory(RLDSDataset):
             'image',
             'wrist_image'
         ]:
-            print(step[cam])
             rr.log(f"/cameras/{cam}", rr.Image(step[cam]))
 
     def log_robot_states(self, step, entity_to_transform):
@@ -260,7 +259,7 @@ def main() -> None:
 
     parser.add_argument("--data", required=False, type=Path)
     # parser.add_argument("--urdf", default="franka_description/panda.urdf", type=Path)
-    parser.add_argument("--urdf", default="ur_description/urdf/ur5.urdf", type=Path)
+    parser.add_argument("--urdf", default="ur_description/ur5.urdf", type=Path)
     args = parser.parse_args()
 
     urdf_logger = URDFLogger(args.urdf)
