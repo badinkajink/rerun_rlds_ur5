@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 import numpy as np
-from rerun_rlds_ur5.rerun_loader_urdf import URDFLogger
+from rerun_rlds_ur5.rerun_loader_urdf import URDFLogger, get_urdf_paths
 from scipy.spatial.transform import Rotation
 from rerun_rlds_ur5.common import log_angle_rot, blueprint_row_images, link_to_world_transform
 import rerun as rr
@@ -258,12 +258,17 @@ def main() -> None:
     )
 
     parser.add_argument("--data", required=False, type=Path)
+    parser.add_argument("--type", default="rlds", required=False, type=str)
     # parser.add_argument("--urdf", default="franka_description/panda.urdf", type=Path)
-    parser.add_argument("--urdf", default="ur_description/ur5.urdf", type=Path)
+    # parser.add_argument("--urdf", default="ur_description/ur5.urdf", type=Path)
+    ur5_urdf, _, _= get_urdf_paths("ur5")
     args = parser.parse_args()
 
-    urdf_logger = URDFLogger(args.urdf)
-    rlds_scene = RLDSDataset(args.data)
+    urdf_logger = URDFLogger(ur5_urdf)
+    if args.type == "deligrasp":
+        rlds_scene = DeliGraspTrajectory(args.data)
+    else:
+        rlds_scene = RLDSDataset(args.data)
     # rlds_scene = DeliGraspTrajectory(args.data)
     
     rr.init("DeliGrasp-visualized", spawn=True)
