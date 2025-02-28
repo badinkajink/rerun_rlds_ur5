@@ -1,0 +1,9 @@
+rerun-sdk>=0.16.0
+numpy
+scipy
+h5py
+opencv-python
+trimesh
+urdf_parser_py
+pycollada
+gcsfs

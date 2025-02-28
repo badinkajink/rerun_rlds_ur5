@@ -1,0 +1,21 @@
+Metadata-Version: 2.2
+Name: rerun_ur5_rlds
+Version: 0.0.1
+Summary: magpie_perception
+Author-email: William Xie <wixi6454@colorado.edu>
+Project-URL: Homepage, https://github.com/correlllab/magpie_perception
+Project-URL: Issues, https://github.com/correlllab/magpie_perception/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: rerun-sdk>=0.16.0
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: h5py
+Requires-Dist: opencv-python
+Requires-Dist: trimesh
+Requires-Dist: urdf_parser_py
+Requires-Dist: pycollada
+Requires-Dist: gcsfs
