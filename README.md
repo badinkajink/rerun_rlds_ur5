@@ -10,3 +10,5 @@ Then, clone and cd into this repo and run `pip install -e .`
 Finally, run `python -m rerun_rlds_ur5.rlds` to pop up a viewer of the data.
 
 To view a single sample trajectory, extract the path to the provided `tests/episode_yellow_rubber_duck.npy` and run `python -m rerun_rlds_ur5.rlds --data path/to/rerun_rlds_ur5/tests/episode_yellow_rubber_duck.npy --type deligrasp`
+
+You should hopefully see something resembling [this](https://bsky.app/profile/wxie.bsky.social/post/3ljb5id5lms2m).
