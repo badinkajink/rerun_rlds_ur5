@@ -8,6 +8,7 @@ from rerun_rlds_ur5.common import log_angle_rot, blueprint_row_images, link_to_w
 import rerun as rr
 import argparse
 import pandas as pd
+from spatialmath.base import rodrigues, tr2rpy
 
 # Hide those pesky warnings.
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -250,6 +251,184 @@ class DeliGraspTrajectory(RLDSDataset):
             self.log_images(step)
             self.log_robot_states(step, entity_to_transform)
             self.log_action_dict(step)
+
+
+class LiveRobotData(RLDSDataset):
+    def __init__(self, entity_to_transform: dict[str, tuple[np.ndarray, np.ndarray]] | None = None, 
+                 task: str = None, subtask: str = None):
+        # ex: ""../episode_yellow rubber_1740699609.3272698.npy"
+    
+        self.prev_joint_origins = None
+        self.entity_to_transform = entity_to_transform
+        self.task = task
+        self.subtask = subtask
+    
+    def log_camera_data(self, step, timestamp, cam_name):
+        rr.set_time_seconds(f"{cam_name}_camera_time", timestamp)
+        rr.log("instructions", rr.TextDocument(f'''
+**instruction 1**: {self.task}
+**instruction 2**: {self.subtask}
+''',
+        media_type="text/markdown"))
+        name_map = {"D405": "wrist_image", "D435": "image"}
+        rr.log(f"/cameras/{name_map[cam_name]}", rr.Image(step["rgb"]))
+        # if "depth" in step.keys():
+        #     rr.log(f"/cameras/{name_map[cam_name]}/depth", rr.Image(step["depth"]))
+
+    def log_gripper_data(self, step, timestamp, name):
+        rr.set_time_seconds(f"{name}_gripper_time", timestamp)
+        rr.log("instructions", rr.TextDocument(f'''
+**instruction 1**: {self.task}
+**instruction 2**: {self.subtask}
+''',
+        media_type="text/markdown"))
+
+        rr.log(
+            "/action_dict/gripper_position",
+            rr.Scalar(step["aperture"]),
+        )
+        rr.log(
+            "/action_dict/gripper_force",
+            rr.Scalar(step["af"]),
+        )
+        rr.log(
+            "/action_dict/contact_force",
+            rr.Scalar(step["cf"]),
+        )
+        rr.log(
+            "/action_dict/contact_force_left",
+            rr.Scalar(step["cf_l"]),
+        )
+        rr.log(
+            "/action_dict/contact_force_right",
+            rr.Scalar(step["cf_r"]),
+        )
+
+    def log_robot_joints(self, step):
+        joint_angles = step
+        joint_origins = []
+        for joint_idx, angle in enumerate(joint_angles):
+            transform = link_to_world_transform(self.entity_to_transform, joint_angles, joint_idx+1)
+            joint_org = (transform @ np.array([0.0, 0.0, 0.0, 1.0]))[:3]
+            joint_origins.append(joint_org)
+
+            log_angle_rot(self.entity_to_transform, joint_idx + 1, angle)
+
+        if self.prev_joint_origins is not None:
+            for traj in range(len(joint_angles)):
+                rr.log(f"trajectory/{traj}", rr.LineStrips3D([joint_origins[traj], self.prev_joint_origins[traj]],))
+    
+        self.prev_joint_origins = joint_origins
+
+    def log_robot_data(self, step, timestamp, name="ur5"):
+        rr.set_time_seconds(f"{name}_robot_time", timestamp)
+        pose, translation, rotation_mat = [], [], []
+        rr.log("instructions", rr.TextDocument(f'''
+**instruction 1**: {self.task}
+**instruction 2**: {self.subtask}
+''',
+        media_type="text/markdown"))
+
+        self.log_robot_joints(step["actual_q"])
+
+        pose = np.array(step["actual_TCP_pose"])
+        translation = pose[:3]
+        rotation_mat = rodrigues(pose[3:6])
+        rr.log(
+            "/action_dict/cartesian_position/cord",
+            rr.Transform3D(translation=translation, mat3x3=rotation_mat),
+        )
+        rr.log(
+            "/action_dict/cartesian_position/origin",
+            rr.Points3D([translation])
+        )
+        for i, vel in enumerate(step["actual_TCP_speed"]):
+            rr.log(f"/action_dict/cartesian_velocity/{i}", rr.Scalar(vel))
+
+        for i, vel in enumerate(step["actual_TCP_speed_wrist_frame"]):
+            rr.log(f"/action_dict/wrist_cartesian_velocity/{i}", rr.Scalar(vel))
+        
+        for i, vel in enumerate(step["target_TCP_speed"]):
+            rr.log(f"/action_dict/wrist_target_cartesian_velocity/{i}", rr.Scalar(vel))
+
+        for i, vel in enumerate(step["actual_qd"]):
+            rr.log(f"/action_dict/joint_velocity/{i}", rr.Scalar(vel))
+
+        for i, force in enumerate(step["wrench"][:3]):
+            rr.log(f"/action_dict/wrist_force/{i}", rr.Scalar(force))
+
+        for i, torque in enumerate(step["wrench"][3:]):
+            rr.log(f"/action_dict/wrist_torque/{i}", rr.Scalar(torque))
+
+    def blueprint(self):
+        from rerun.blueprint import (
+            Blueprint,
+            Horizontal,
+            Vertical,
+            Spatial3DView,
+            TimeSeriesView,
+            Tabs,
+            SelectionPanel,
+            TimePanel,
+            TextDocumentView
+        )
+
+        return Blueprint(
+            Horizontal(
+                Vertical(
+                    Spatial3DView(name="spatial view", origin="/", contents=["/**"]),
+                    blueprint_row_images(
+                        [
+                            f"/cameras/{cam}"
+                            for cam in [
+                                "image",
+                                "wrist_image",
+                            ]
+                        ]
+                    ),
+                    row_shares=[3, 1],
+                ),
+                Vertical(
+                    Tabs( # Tabs for all the different time serieses.
+                        Vertical(
+                            *(
+                                TimeSeriesView(origin=f"/action_dict/wrist_force/{i}")
+                                for i in range(3)
+                            ),
+                            name="wrist_force",
+                        ),
+                        Vertical(
+                            *(
+                                TimeSeriesView(origin=f"/action_dict/wrist_torque/{i}")
+                                for i in range(3)
+                            ),
+                            name="wrist torque",
+                        ),
+                        Vertical(
+                            *(
+                                TimeSeriesView(origin=f"/action_dict/wrist_cartesian_velocity/{i}")
+                                for i in range(6)
+                            ),
+                            name="wrist cartesian velocity",
+                        ),
+                        Vertical(
+                            TimeSeriesView(origin="/action_dict/gripper_position"),
+                            TimeSeriesView(origin="/action_dict/gripper_force"),
+                            TimeSeriesView(origin="/action_dict/contact_force"),
+                            TimeSeriesView(origin="/action_dict/contact_force_left"),
+                            TimeSeriesView(origin="/action_dict/contact_force_right"),
+                            name="gripper",
+                        ),
+                        active_tab=0,
+                    ),
+                    TextDocumentView(origin='instructions'),
+                    row_shares=[7, 1]
+                ),
+                column_shares=[3, 1],
+            ),
+            SelectionPanel(expanded=False),
+            TimePanel(expanded=False),
+        )
 
 
 def main() -> None:
