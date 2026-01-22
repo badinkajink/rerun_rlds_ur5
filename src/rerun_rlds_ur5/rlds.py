@@ -39,7 +39,7 @@ class RLDSDataset:
             rr.log(f"/cameras/{cam}", rr.Image(step["observation"][cam].numpy()))
 
     def log_robot_states(self, step, entity_to_transform):
-        
+
         joint_angles = step["observation"]["joint_position"]
 
         joint_origins = []
@@ -53,7 +53,7 @@ class RLDSDataset:
         if self.prev_joint_origins is not None:
             for traj in range(len(joint_angles)):
                 rr.log(f"trajectory/{traj}", rr.LineStrips3D([joint_origins[traj], self.prev_joint_origins[traj]],))
-    
+
         self.prev_joint_origins = joint_origins
 
 
@@ -71,24 +71,24 @@ class RLDSDataset:
         )
 
         # for i, vel in enumerate(step["action_dict"]["cartesian_velocity"]):
-        #     rr.log(f"/action_dict/cartesian_velocity/{i}", rr.Scalar(vel))
+        #     rr.log(f"/action_dict/cartesian_velocity/{i}", rr.Scalars(vel))
 
         # for i, vel in enumerate(step["action_dict"]["joint_velocity"]):
-        #     rr.log(f"/action_dict/joint_velocity/{i}", rr.Scalar(vel))
+        #     rr.log(f"/action_dict/joint_velocity/{i}", rr.Scalars(vel))
 
         rr.log(
             "/action_dict/gripper_position",
-            rr.Scalar(step["action_dict"]["gripper_position"]),
+            rr.Scalars(step["action_dict"]["gripper_position"]),
         )
         rr.log(
             "/action_dict/gripper_force",
-            rr.Scalar(step["action_dict"]["gripper_force"]),
+            rr.Scalars(step["action_dict"]["gripper_force"]),
         )
         rr.log(
             "/action_dict/contact_force",
-            rr.Scalar(step["observation"]["contact_force"]),
+            rr.Scalars(step["observation"]["contact_force"]),
         )
-        rr.log("/reward", rr.Scalar(step["reward"]))
+        rr.log("/reward", rr.Scalars(step["reward"]))
 
     def log_robot_dataset(
         self, entity_to_transform: dict[str, tuple[np.ndarray, np.ndarray]]
@@ -96,7 +96,8 @@ class RLDSDataset:
         cur_time_ns = 0
         for episode in self.ds:
             for step in episode["steps"]:
-                rr.set_time_nanos("real_time", cur_time_ns)
+                # rr.set_time_nanos("real_time", cur_time_ns)
+                rr.set_time("real_time", timestamp=np.datetime64(cur_time_ns, 'ns'))
                 cur_time_ns += int((1e9 * 1 / 15))
                 rr.log("instructions", rr.TextDocument(f'''
 **instruction 1**: {bytearray(step["language_instruction"].numpy()).decode()}
@@ -108,7 +109,7 @@ class RLDSDataset:
                 self.log_images(step)
                 self.log_robot_states(step, entity_to_transform)
                 self.log_action_dict(step)
-                rr.log("discount", rr.Scalar(step["discount"]))
+                rr.log("discount", rr.Scalars(step["discount"]))
 
     def blueprint(self):
         from rerun.blueprint import (
@@ -180,10 +181,10 @@ class DeliGraspTrajectory(RLDSDataset):
     def __init__(self, data: Path | None = None):
         # ex: ""../episode_yellow rubber_1740699609.3272698.npy"
         ds = np.load(data, allow_pickle=True)
-        columns = ['timestamp', 'q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'x', 'y', 'z', 'rx', 'ry', 'rz', 'dx', 'dy', 'dz', 'drx', 'dry', 'drz', 'aperture', 'd_aperture', 'applied_force', 'd_applied_force', 'contact_force', 'subtask', 'task', 'image', 'wrist_image']        
+        columns = ['timestamp', 'q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'x', 'y', 'z', 'rx', 'ry', 'rz', 'dx', 'dy', 'dz', 'drx', 'dry', 'drz', 'aperture', 'd_aperture', 'applied_force', 'd_applied_force', 'contact_force', 'subtask', 'task', 'image', 'wrist_image']
         self.prev_joint_origins = None
         self.ds = pd.DataFrame(ds, columns=columns)
-    
+
     def log_images(self, step):
         for cam in [
             'image',
@@ -192,7 +193,7 @@ class DeliGraspTrajectory(RLDSDataset):
             rr.log(f"/cameras/{cam}", rr.Image(step[cam]))
 
     def log_robot_states(self, step, entity_to_transform):
-        
+
         joint_angles = step['q0':'q5'].to_numpy()
 
         joint_origins = []
@@ -206,7 +207,7 @@ class DeliGraspTrajectory(RLDSDataset):
         if self.prev_joint_origins is not None:
             for traj in range(len(joint_angles)):
                 rr.log(f"trajectory/{traj}", rr.LineStrips3D([joint_origins[traj], self.prev_joint_origins[traj]],))
-    
+
         self.prev_joint_origins = joint_origins
 
 
@@ -224,15 +225,15 @@ class DeliGraspTrajectory(RLDSDataset):
         )
         rr.log(
             "/action_dict/gripper_position",
-            rr.Scalar(step["aperture"]),
+            rr.Scalars(step["aperture"]),
         )
         rr.log(
             "/action_dict/gripper_force",
-            rr.Scalar(step["applied_force"]),
+            rr.Scalars(step["applied_force"]),
         )
         rr.log(
             "/action_dict/contact_force",
-            rr.Scalar(step["contact_force"]),
+            rr.Scalars(step["contact_force"]),
         )
 
     def log_robot_dataset(
@@ -241,7 +242,8 @@ class DeliGraspTrajectory(RLDSDataset):
         cur_time_ns = 0
         for i in range(len(self.ds)):
             step = self.ds.iloc[i]
-            rr.set_time_nanos("real_time", cur_time_ns)
+            # rr.set_time_nanos("real_time", cur_time_ns)
+            rr.set_time("real_time", timestamp=np.datetime64(cur_time_ns, 'ns'))
             cur_time_ns += int((1e9 * 1 / 15))
             rr.log("instructions", rr.TextDocument(f'''
 **instruction 1**: {step["task"]}
@@ -254,15 +256,15 @@ class DeliGraspTrajectory(RLDSDataset):
 
 
 class LiveRobotData(RLDSDataset):
-    def __init__(self, entity_to_transform: dict[str, tuple[np.ndarray, np.ndarray]] | None = None, 
+    def __init__(self, entity_to_transform: dict[str, tuple[np.ndarray, np.ndarray]] | None = None,
                  task: str = None, subtask: str = None):
         # ex: ""../episode_yellow rubber_1740699609.3272698.npy"
-    
+
         self.prev_joint_origins = None
         self.entity_to_transform = entity_to_transform
         self.task = task
         self.subtask = subtask
-    
+
     def log_camera_data(self, step, timestamp, cam_name):
         rr.set_time_seconds(f"{cam_name}_camera_time", timestamp)
         rr.log("instructions", rr.TextDocument(f'''
@@ -285,23 +287,23 @@ class LiveRobotData(RLDSDataset):
 
         rr.log(
             "/action_dict/gripper_position",
-            rr.Scalar(step["aperture"]),
+            rr.Scalars(step["aperture"]),
         )
         rr.log(
             "/action_dict/gripper_force",
-            rr.Scalar(step["af"]),
+            rr.Scalars(step["af"]),
         )
         rr.log(
             "/action_dict/contact_force",
-            rr.Scalar(step["cf"]),
+            rr.Scalars(step["cf"]),
         )
         rr.log(
             "/action_dict/contact_force_left",
-            rr.Scalar(step["cf_l"]),
+            rr.Scalars(step["cf_l"]),
         )
         rr.log(
             "/action_dict/contact_force_right",
-            rr.Scalar(step["cf_r"]),
+            rr.Scalars(step["cf_r"]),
         )
 
     def log_robot_joints(self, step):
@@ -317,7 +319,7 @@ class LiveRobotData(RLDSDataset):
         if self.prev_joint_origins is not None:
             for traj in range(len(joint_angles)):
                 rr.log(f"trajectory/{traj}", rr.LineStrips3D([joint_origins[traj], self.prev_joint_origins[traj]],))
-    
+
         self.prev_joint_origins = joint_origins
 
     def log_robot_data(self, step, timestamp, name="ur5"):
@@ -343,22 +345,22 @@ class LiveRobotData(RLDSDataset):
             rr.Points3D([translation])
         )
         for i, vel in enumerate(step["actual_TCP_speed"]):
-            rr.log(f"/action_dict/cartesian_velocity/{i}", rr.Scalar(vel))
+            rr.log(f"/action_dict/cartesian_velocity/{i}", rr.Scalars(vel))
 
         for i, vel in enumerate(step["actual_TCP_speed_wrist_frame"]):
-            rr.log(f"/action_dict/wrist_cartesian_velocity/{i}", rr.Scalar(vel))
-        
+            rr.log(f"/action_dict/wrist_cartesian_velocity/{i}", rr.Scalars(vel))
+
         for i, vel in enumerate(step["target_TCP_speed"]):
-            rr.log(f"/action_dict/wrist_target_cartesian_velocity/{i}", rr.Scalar(vel))
+            rr.log(f"/action_dict/wrist_target_cartesian_velocity/{i}", rr.Scalars(vel))
 
         for i, vel in enumerate(step["actual_qd"]):
-            rr.log(f"/action_dict/joint_velocity/{i}", rr.Scalar(vel))
+            rr.log(f"/action_dict/joint_velocity/{i}", rr.Scalars(vel))
 
         for i, force in enumerate(step["wrench"][:3]):
-            rr.log(f"/action_dict/wrist_force/{i}", rr.Scalar(force))
+            rr.log(f"/action_dict/wrist_force/{i}", rr.Scalars(force))
 
         for i, torque in enumerate(step["wrench"][3:]):
-            rr.log(f"/action_dict/wrist_torque/{i}", rr.Scalar(torque))
+            rr.log(f"/action_dict/wrist_torque/{i}", rr.Scalars(torque))
 
     def blueprint(self):
         from rerun.blueprint import (
@@ -449,12 +451,13 @@ def main() -> None:
     else:
         rlds_scene = RLDSDataset(args.data)
     # rlds_scene = DeliGraspTrajectory(args.data)
-    
+
     rr.init("DeliGrasp-visualized", spawn=True)
 
     rr.send_blueprint(rlds_scene.blueprint())
 
-    rr.set_time_nanos("real_time", 0)
+    # rr.set_time_nanos("real_time", 0)
+    rr.set_time("real_time", timestamp=np.datetime64(0, 'ns'))
     urdf_logger.log()
     rlds_scene.log_robot_dataset(urdf_logger.entity_to_transform)
 
