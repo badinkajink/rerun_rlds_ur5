@@ -28,10 +28,8 @@ def link_to_world_transform(
         else:
             angle_rad = joint_angles[i-1]
         vec = np.array(np.array([0, 0, 1]) * angle_rad)
-        
         rot = Rotation.from_rotvec(vec).as_matrix()
         rotation_mat = start_rotation_mat @ rot
-        
         transform = np.eye(4)
         transform[:3,:3] = rotation_mat
         transform[:3,3] = start_translation
@@ -44,7 +42,7 @@ def log_cartesian_velocity(root: str, cartesian_velocity: np.ndarray):
         root += "/"
 
     for vel, name in zip(cartesian_velocity, POS_DIM_NAMES):
-        rr.log(root + name, rr.Scalar(vel))
+        rr.log(root + name, rr.Scalars(vel))
 
 
 def blueprint_row_images(origins):

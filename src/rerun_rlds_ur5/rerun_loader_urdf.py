@@ -41,11 +41,11 @@ def get_urdf_paths(robot="ur5"):
 
         # Replace occurrences of relative paths with environment variables
         urdf_content = urdf_content.replace(
-            f'filename="ur_description/meshes/{robot}/visual/', 
+            f'filename="ur_description/meshes/{robot}/visual/',
             f'filename="{dae_path}/'
         )
         urdf_content = urdf_content.replace(
-            f'filename="ur_description/meshes/{robot}/collision/', 
+            f'filename="ur_description/meshes/{robot}/collision/',
             f'filename="{stl_path}/'
         )
 
@@ -65,11 +65,11 @@ def update_urdf(robot, urdf_path, stl_path, dae_path):
 
     # Replace occurrences of relative paths with environment variables
     urdf_content = urdf_content.replace(
-        f'filename="ur_description/meshes/{robot}/visual/', 
+        f'filename="ur_description/meshes/{robot}/visual/',
         f'filename="{dae_path}/'
     )
     urdf_content = urdf_content.replace(
-        f'filename="ur_description/meshes/{robot}/collision/', 
+        f'filename="ur_description/meshes/{robot}/collision/',
         f'filename="{stl_path}/'
     )
 
@@ -102,7 +102,7 @@ class URDFLogger:
 
     def log(self) -> None:
         """Log a URDF file to Rerun."""
-        rr.log(self.root_path + "", rr.ViewCoordinates.RIGHT_HAND_Z_UP, timeless=True)  # default ROS convention
+        rr.log(self.root_path + "", rr.ViewCoordinates.RIGHT_HAND_Z_UP)  # default ROS convention
 
         for joint in self.urdf.joints:
             entity_path = self.joint_entity_path(joint)
@@ -162,12 +162,12 @@ class URDFLogger:
                 radius=visual.geometry.radius,
             )
         else:
-            rr.log(self.root_path + 
+            rr.log(self.root_path +
                 "",
                 rr.TextLog("Unsupported geometry type: " + str(type(visual.geometry))),
             )
             mesh_or_scene = trimesh.Trimesh()
-        
+
         mesh_or_scene.apply_transform(transform)
 
         if isinstance(mesh_or_scene, trimesh.Scene):
@@ -222,7 +222,7 @@ def log_trimesh(entity_path: str, mesh: trimesh.Trimesh) -> None:
                 vertex_colors = colors
         except Exception:
             pass
-    
+
     rr.log(
         entity_path,
         rr.Mesh3D(
@@ -233,7 +233,7 @@ def log_trimesh(entity_path: str, mesh: trimesh.Trimesh) -> None:
             albedo_texture=albedo_texture,
             vertex_texcoords=vertex_texcoords,
         ),
-        timeless=True,
+        # timeless=True,
     )
 
 def resolve_ros_path(path: str) -> str:

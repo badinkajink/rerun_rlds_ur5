@@ -24,7 +24,7 @@ class StereoCamera:
     right_intrinsic_mat: np.ndarray
 
     def __init__(self, recordings: Path, serial: int):
-        
+
         try:
             import pyzed.sl as sl
             init_params = sl.InitParameters()
@@ -43,7 +43,7 @@ class StereoCamera:
             params = (
                 zed.get_camera_information().camera_configuration.calibration_parameters
             )
-            
+
             self.left_intrinsic_mat = np.array(
                 [
                     [params.left_cam.fx, 0, params.left_cam.cx],
@@ -68,7 +68,7 @@ class StereoCamera:
                 [  0.,           0.,           1.,        ]
             ])
             self.right_intrinsic_mat = self.left_intrinsic_mat
-            
+
             mp4_path = recordings / "MP4" / f'{serial}-stereo.mp4'
             if (recordings / "MP4" / f'{serial}-stereo.mp4').exists():
                 mp4_path = recordings / "MP4" / f'{serial}-stereo.mp4'
@@ -158,9 +158,9 @@ class RawScene:
     def log_cameras_next(self, i: int) -> None:
         """
         Log data from cameras at step `i`.
-        It should be noted that it logs the next camera frames that haven't been 
-        read yet, this means that this method must only be called once for each step 
-        and it must be called in order (log_cameras_next(0), log_cameras_next(1)). 
+        It should be noted that it logs the next camera frames that haven't been
+        read yet, this means that this method must only be called once for each step
+        and it must be called in order (log_cameras_next(0), log_cameras_next(1)).
 
         The motivation behind this is to avoid storing all the frames in a `list` because
         that would take up too much memory.
@@ -192,7 +192,7 @@ class RawScene:
                         mat3x3=rotation,
                     ),
                 ),
-                
+
                 extrinsics_right = self.trajectory["observation"]["camera_extrinsics"][
                     f"{self.serial[camera_name]}_right"
                 ][i]
@@ -254,21 +254,21 @@ class RawScene:
 
         log_cartesian_velocity('action/cartesian_velocity', self.action['cartesian_velocity'][i])
 
-        rr.log('action/gripper_position', rr.Scalar(self.action['gripper_position'][i]))
-        rr.log('action/gripper_velocity', rr.Scalar(self.action['gripper_velocity'][i]))
+        rr.log('action/gripper_position', rr.Scalars(self.action['gripper_position'][i]))
+        rr.log('action/gripper_velocity', rr.Scalars(self.action['gripper_velocity'][i]))
 
         for j, vel in enumerate(self.trajectory['action']['cartesian_position'][i]):
-            rr.log(f'action/joint_velocity/{j}', rr.Scalar(vel))
+            rr.log(f'action/joint_velocity/{j}', rr.Scalars(vel))
 
         pose = self.trajectory['action']['target_cartesian_position'][i]
         trans, mat = extract_extrinsics(pose)
         rr.log('action/target_cartesian_position/transform', rr.Transform3D(translation=trans, mat3x3=mat))
         rr.log('action/target_cartesian_position/origin', rr.Points3D([trans]))
 
-        rr.log('action/target_gripper_position', rr.Scalar(self.action['target_gripper_position'][i]))
-        
+        rr.log('action/target_gripper_position', rr.Scalars(self.action['target_gripper_position'][i]))
+
     def log_robot_state(self, i: int, entity_to_transform: dict[str, tuple[np.ndarray, np.ndarray]]) -> None:
-        
+
         joint_angles = self.robot_state['joint_positions'][i]
         for joint_idx, angle in enumerate(joint_angles):
             log_angle_rot(entity_to_transform, joint_idx + 1, angle)
@@ -283,20 +283,20 @@ class RawScene:
                     joint_org = (transform @ np.array([0.0, 0.0, 0.0, 1.0]))[:3]
                     joint_origins.append(list(joint_org))
                 lines.append(joint_origins)
-            
+
             for traj in range(len(lines[0])):
                 rr.log(f"trajectory/{traj}", rr.LineStrips3D([origins[traj] for origins in lines]))
-        
-        rr.log('robot_state/gripper_position', rr.Scalar(self.robot_state['gripper_position'][i]))
+
+        rr.log('robot_state/gripper_position', rr.Scalars(self.robot_state['gripper_position'][i]))
 
         for j, vel in enumerate(self.robot_state['joint_velocities'][i]):
-            rr.log(f"robot_state/joint_velocities/{j}", rr.Scalar(vel))
+            rr.log(f"robot_state/joint_velocities/{j}", rr.Scalars(vel))
 
         for j, vel in enumerate(self.robot_state['joint_torques_computed'][i]):
-            rr.log(f"robot_state/joint_torques_computed/{j}", rr.Scalar(vel))
+            rr.log(f"robot_state/joint_torques_computed/{j}", rr.Scalars(vel))
 
         for j, vel in enumerate(self.robot_state['motor_torques_measured'][i]):
-            rr.log(f"robot_state/motor_torques_measured/{j}", rr.Scalar(vel))
+            rr.log(f"robot_state/motor_torques_measured/{j}", rr.Scalars(vel))
 
     def log(self, urdf_logger) -> None:
         time_stamps_nanos = self.trajectory["observation"]["timestamp"]["robot_state"][
@@ -362,7 +362,7 @@ def blueprint_raw():
                 Vertical(
                     TimeSeriesView(origin='action/', contents=['action/gripper_position', 'action/target_gripper_position']),
                     TimeSeriesView(origin='action/gripper_velocity'),
-                    name='action/gripper' 
+                    name='action/gripper'
                 ),
                 Vertical(
                     *(
