@@ -9,3 +9,4 @@ pycollada
 tensorflow
 tensorflow_datasets
 gcsfs
+spatialmath-python
