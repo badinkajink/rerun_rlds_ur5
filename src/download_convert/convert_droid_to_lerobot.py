@@ -3,7 +3,7 @@ import numpy as np
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 # 1. Configuration
-DATA_DIR = "path/to/deligrasp_dataset" 
+DATA_DIR = r"C:\Users\paula\Correl-Lab\rerun_rlds_ur5\justaddforce_dataset\deligrasp_dataset\1.0.0"
 REPO_ID = "local/deligrasp_dataset_LeRobot"
 FPS = 10  
 
@@ -13,6 +13,12 @@ features = {
         "shape": (3, 480, 640), 
         "names": ["channels", "height", "width"],
     },
+    "wrist_image": {
+        "dtype": "image",
+        "shape": (3, 480, 640), 
+        "names": ["channels", "height", "width"],
+    },
+
     "state": {
         "dtype": "float32",
         "shape": (16,),         
@@ -41,13 +47,17 @@ for episode_idx, episode in enumerate(raw_dataset):
         
         img = step["observation"]["image"]
         img_chw = np.transpose(img, (2, 0, 1)) 
+
+        wimg = step["observation"]["wrist_image"]
+        wimg_chw = np.transpose(wimg, (2, 0, 1)) 
         
         # LeRobot handles all timestamps and indices natively.
         dataset.add_frame({
             "image": img_chw,
+            "wrist_image": wimg_chw, 
             "state": step["observation"]["state"].astype(np.float32),
             "action": step["action"].astype(np.float32),
-            "task": "grasp object", 
+            "task": step["subtask"].decode("utf-8")
         })
         
     dataset.save_episode()
