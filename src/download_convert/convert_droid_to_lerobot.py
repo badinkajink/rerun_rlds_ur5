@@ -3,7 +3,7 @@ import numpy as np
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 # 1. Configuration
-DATA_DIR = r"C:\Users\paula\Correl-Lab\rerun_rlds_ur5\justaddforce_dataset\deligrasp_dataset\1.0.0"
+DATA_DIR = "data/deligrasp_dataset"
 REPO_ID = "local/deligrasp_dataset_LeRobot"
 FPS = 10  
 
