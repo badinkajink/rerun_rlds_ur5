@@ -2,11 +2,17 @@ rerun-sdk>=0.16.0
 numpy
 scipy
 h5py
+pandas
 opencv-python
 trimesh
 urdf_parser_py
 pycollada
 tensorflow
-tensorflow_datasets
+tensorflow-datasets
 gcsfs
 spatialmath-python
+huggingface_hub
+datasets==3.6.0
+lerobot @ git+https://github.com/huggingface/lerobot@0cf864870cf29f4738d3ade893e6fd13fbd7cdb5
+uv
+tyro
